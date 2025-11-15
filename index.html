@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прогноз Погоди</title>
+    <!-- Підключення Tailwind CSS для стилізації -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* CSS: Стилі, які не можна додати через класи Tailwind */
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Гарний градієнтний фон */
+            background: linear-gradient(135deg, #6DD5FA 0%, #FF7F7F 100%); 
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .weather-card {
+            /* Ефект напівпрозорості та розмиття */
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.85); 
+            box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 420px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+        /* Стиль для індикатора завантаження */
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Стиль для жирного тексту помилки */
+        #errorMessage.critical {
+            font-weight: 800;
+            font-size: 1.125rem; /* text-xl */
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HTML: Структура додатка -->
+    <div id="app" class="weather-card rounded-xl p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Прогноз Погоди</h1>
+
+        <!-- Форма пошуку міста -->
+        <form id="cityForm" class="flex gap-2 mb-6">
+            <input type="text" id="cityInput" placeholder="Введіть назву міста (наприклад, Kyiv)"
+                   class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                   required>
+            <button type="submit"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-5 rounded-lg transition duration-200 shadow-md">
+                Пошук
+            </button>
+        </form>
+
+        <!-- Блок для завантаження -->
+        <div id="loading" class="hidden text-center">
+            <div class="loader"></div>
+            <p class="text-gray-600">Завантаження...</p>
+        </div>
+
+        <!-- Блок для відображення помилок -->
+        <div id="error" class="hidden bg-red-100 border-2 border-red-500 text-red-700 px-4 py-6 rounded-xl relative mb-4 text-center" role="alert">
+            <strong class="font-black text-xl text-red-800 block mb-2">ПОМИЛКА ЗАПИТУ!</strong>
+            <span id="errorMessage" class="block sm:inline critical">Не вдалося отримати дані.</span>
+        </div>
+
+        <!-- Картка з результатом прогнозу -->
+        <div id="weatherResult" class="hidden text-center">
+            <div class="flex flex-col items-center">
+                <!-- Назва міста та країни -->
+                <h2 id="cityName" class="text-4xl font-extrabold text-gray-900 mb-2">Місто</h2>
+                
+                <!-- Іконка погоди та опис -->
+                <img id="weatherIcon" src="" alt="Іконка погоди" class="w-20 h-20 mb-2">
+                <p id="description" class="text-xl font-medium text-gray-700 capitalize mb-4">Ясно</p>
+
+                <!-- Температура -->
+                <p id="temperature" class="text-7xl font-light text-gray-900 mb-6">--°C</p>
+            </div>
+
+            <!-- Детальна інформація про погоду -->
+            <div class="grid grid-cols-2 gap-4 text-left text-gray-700 border-t border-gray-300 pt-4">
+                <div class="flex justify-between items-center p-2 bg-gray-100 rounded-lg">
+                    <span class="font-semibold">Відчувається як:</span>
+                    <span id="feelsLike" class="font-bold">--°C</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-100 rounded-lg">
+                    <span class="font-semibold">Вологість:</span>
+                    <span id="humidity" class="font-bold">--%</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-100 rounded-lg">
+                    <span class="font-semibold">Швидкість вітру:</span>
+                    <span id="windSpeed" class="font-bold">-- м/с</span>
+                </div>
+                <div class="flex justify-between items-center p-2 bg-gray-100 rounded-lg">
+                    <span class="font-semibold">Тиск:</span>
+                    <span id="pressure" class="font-bold">-- гПа</span>
+                </div>
+            </div>
+
+            <!-- Кнопка для AI-рекомендації -->
+            <button id="recommendationBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-5 rounded-lg transition duration-200 shadow-md mt-4 w-full flex items-center justify-center gap-2 hidden">
+                ✨ Отримати Рекомендацію на День
+            </button>
+
+            <!-- Контейнер для Gemini-рекомендації -->
+            <div id="geminiOutput" class="mt-4 p-4 bg-purple-100 rounded-lg text-gray-800 hidden text-left">
+                <p class="font-bold mb-2 text-purple-800">Ваша порада від AI:</p>
+                <p id="geminiText" class="text-sm italic"></p>
+                <!-- Лоадер для AI -->
+                <div id="geminiLoader" class="hidden text-center mt-2">
+                    <div class="loader w-6 h-6 border-2 border-t-2" style="margin: 0 auto; border-top-color: #9333ea;"></div>
+                    <p class="text-xs text-purple-700">Генерація поради...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript: Логіка додатка та виклики API -->
+    <script>
+        // *************************************************************************
+        // *** 🛑 ОБОВ'ЯЗКОВО! ВСТАВТЕ СЮДИ ВАШ КЛЮЧ API ВІД OPENWEATHERMAP 🛑 ***
+        // Крок 1: Отримайте ключ на https://openweathermap.org/api
+        // Крок 2: Замініть "YOUR_OPENWEATHERMAP_API_KEY" на ваш реальний ключ.
+        const API_KEY = "8f55b9f0a91d26eae0fb86956e13fcc8"; // КЛЮЧ ОНОВЛЕНО!
+        // *************************************************************************
+
+        // =========================================================================
+        // *** GEMINI API КОНФІГУРАЦІЯ (для рекомендацій) ***
+        const GEMINI_API_KEY = ""; // Встановіть ваш ключ для функції рекомендацій (якщо ви хочете використовувати цю функцію)
+        const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+        // =========================================================================
+
+        // Базовий URL для запиту поточної погоди
+        const BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+
+        // Отримання елементів DOM
+        const cityForm = document.getElementById('cityForm');
+        const cityInput = document.getElementById('cityInput');
+        const weatherResult = document.getElementById('weatherResult');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const errorMessage = document.getElementById('errorMessage');
+
+        const cityNameEl = document.getElementById('cityName');
+        const weatherIconEl = document.getElementById('weatherIcon');
+        const descriptionEl = document.getElementById('description');
+        const temperatureEl = document.getElementById('temperature');
+        const feelsLikeEl = document.getElementById('feelsLike');
+        const humidityEl = document.getElementById('humidity');
+        const windSpeedEl = document.getElementById('windSpeed');
+        const pressureEl = document.getElementById('pressure');
+
+        // Елементи Gemini
+        const recommendationBtn = document.getElementById('recommendationBtn');
+        const geminiOutput = document.getElementById('geminiOutput');
+        const geminiText = document.getElementById('geminiText');
+        const geminiLoader = document.getElementById('geminiLoader');
+
+        /**
+         * Показує або приховує елемент.
+         * @param {HTMLElement} element - елемент DOM.
+         * @param {boolean} show - true, щоб показати, false, щоб приховати.
+         */
+        function toggleVisibility(element, show) {
+            element.classList.toggle('hidden', !show);
+        }
+
+        /**
+         * Універсальна функція fetch з експоненційною затримкою (retry mechanism).
+         * @param {string} url - URL для запиту.
+         * @param {Object} options - Опції для fetch.
+         * @returns {Promise<Object>} JSON-відповідь.
+         */
+        async function fetchWithRetry(url, options) {
+            let attempts = 0;
+            const maxAttempts = 3;
+
+            while (attempts < maxAttempts) {
+                try {
+                    const response = await fetch(url, options);
+                    
+                    if (response.status === 401) {
+                         // Явна обробка 401 Unauthorized
+                        throw new Error(`OpenWeatherMap API повертає помилку 401 (Несанкціонований доступ). 
+                            Це означає, що ваш ключ API (8f55b9f0a91d26eae0fb86956e13fcc8) не є дійсним або ще не активований. 
+                            Активація нового ключа може зайняти до 1-2 годин. Будь ласка, спробуйте пізніше або перевірте ключ у профілі OpenWeatherMap.`);
+                    }
+
+                    if (response.ok) {
+                        return await response.json();
+                    } else {
+                        // Якщо помилка HTTP, спробуємо ще раз
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                } catch (error) {
+                    attempts++;
+                    if (attempts >= maxAttempts) {
+                        throw error;
+                    }
+                    // Експоненційна затримка: 1s, 2s, 4s
+                    await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempts) * 1000));
+                }
+            }
+        }
+
+        /**
+         * Виконує запит до OpenWeatherMap API для отримання даних про погоду.
+         * @param {string} city - Назва міста.
+         */
+        async function fetchWeather(city) {
+            // Перевірка наявності API ключа OpenWeatherMap
+            if (API_KEY === "YOUR_OPENWEATHERMAP_API_KEY" || API_KEY === "") {
+                toggleVisibility(loading, false);
+                toggleVisibility(weatherResult, false);
+                
+                // *** АКТИВОВАНА КРИТИЧНА ПОМИЛКА: КЛЮЧ API ВІДСУТНІЙ ***
+                errorMessage.textContent = "Будь ласка, вставте ваш API-ключ OpenWeatherMap у змінну API_KEY (рядок 160). Ключ можна отримати на openweathermap.org. Додаток не працюватиме без цього ключа.";
+                toggleVisibility(errorDiv, true);
+                return;
+            }
+            
+            // Скидання попередніх станів
+            toggleVisibility(weatherResult, false);
+            toggleVisibility(errorDiv, false);
+            toggleVisibility(loading, true);
+            toggleVisibility(geminiOutput, false); // Ховаємо AI-рекомендацію
+            
+            // Затримка 5 секунд, щоб дати час на активацію ключа (особливо важливо після першого введення)
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+
+            // Формування URL запиту
+            const url = `${BASE_URL}?q=${city}&appid=${API_KEY}&units=metric&lang=ua`;
+            
+            try {
+                const data = await fetchWithRetry(url);
+
+                // OpenWeatherMap повертає поле 'cod', яке може бути рядком, якщо це помилка
+                if (data.cod && data.cod !== 200 && data.cod !== '200') {
+                    let errorText = data.message || "Невідома помилка.";
+                    if (data.cod === '404') {
+                        errorText = `Місто "${city}" не знайдено. Будь ласка, перевірте назву.`;
+                    }
+                    throw new Error(errorText);
+                }
+
+                displayWeather(data);
+
+            } catch (err) {
+                // Обробка помилок мережі або інших помилок
+                toggleVisibility(loading, false);
+                // Показ детальної помилки для 401
+                const displayError = err.message.includes("OpenWeatherMap API") 
+                    ? err.message 
+                    : (err.message || "Сталася помилка під час запиту до сервера.");
+                
+                errorMessage.textContent = displayError;
+                toggleVisibility(errorDiv, true);
+                console.error("Помилка отримання погоди:", err);
+            }
+        }
+
+        /**
+         * Викликає Gemini API для генерації персоналізованої рекомендації.
+         * @param {Object} weatherData - Об'єкт з даними прогнозу.
+         */
+        async function getDailyRecommendation(weatherData) {
+            if (GEMINI_API_KEY === "") {
+                geminiText.textContent = "Будь ласка, вставте ваш API-ключ Gemini у змінну GEMINI_API_KEY для генерації рекомендацій.";
+                toggleVisibility(geminiOutput, true);
+                return;
+            }
+
+            // Підготовка інтерфейсу для завантаження
+            toggleVisibility(recommendationBtn, false); // Приховуємо кнопку під час завантаження
+            toggleVisibility(geminiOutput, true);
+            toggleVisibility(geminiLoader, true);
+            geminiText.textContent = ''; // Очищаємо попередній текст
+
+            const city = weatherData.name;
+            const temp = Math.round(weatherData.main.temp);
+            const description = weatherData.weather[0].description;
+            const windSpeed = weatherData.wind.speed;
+
+            // Системна інструкція для керування моделлю
+            const systemPrompt = "Ти — креативний консультант зі стилю життя. Твоя мета — на основі погодних даних скласти коротку, надихаючу та практичну рекомендацію (один абзац) щодо того, як провести день з урахуванням погоди. Завжди використовуй українську мову. Рекомендація має бути доброзичливою і заохочувальною.";
+            
+            // Запит користувача
+            const userQuery = `Погодні дані: Місто: ${city}. Температура: ${temp}°C. Опис: ${description}. Швидкість вітру: ${windSpeed} м/с. Напиши рекомендацію.`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                },
+            };
+
+            const options = {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            };
+
+            try {
+                const result = await fetchWithRetry(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, options);
+
+                if (result && result.candidates && result.candidates.length > 0) {
+                    const generatedText = result.candidates[0].content.parts[0].text;
+                    geminiText.textContent = generatedText;
+                } else {
+                    geminiText.textContent = "Не вдалося отримати рекомендацію від AI. Спробуйте ще раз.";
+                }
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                geminiText.textContent = `Помилка API: ${error.message}.`;
+            } finally {
+                toggleVisibility(recommendationBtn, true); // Знову показуємо кнопку
+                toggleVisibility(geminiLoader, false);
+            }
+        }
+
+
+        /**
+         * Оновлює DOM для відображення отриманих даних про погоду.
+         * @param {Object} data - Об'єкт з даними прогнозу від API.
+         */
+        function displayWeather(data) {
+            toggleVisibility(loading, false);
+            toggleVisibility(errorDiv, false);
+            
+            // Вилучення необхідних даних
+            const temp = Math.round(data.main.temp);
+            const feelsLike = Math.round(data.main.feels_like);
+            const description = data.weather[0].description;
+            const iconCode = data.weather[0].icon;
+            const city = data.name;
+            const country = data.sys.country;
+            const humidity = data.main.humidity;
+            const windSpeed = data.wind.speed; // м/с
+            const pressure = data.main.pressure; // гПа
+
+            // Оновлення елементів UI
+            cityNameEl.textContent = `${city}, ${country}`;
+            descriptionEl.textContent = description;
+            temperatureEl.textContent = `${temp}°C`;
+            feelsLikeEl.textContent = `${feelsLike}°C`;
+            humidityEl.textContent = `${humidity}%`;
+            windSpeedEl.textContent = `${windSpeed} м/с`;
+            pressureEl.textContent = `${pressure} гПа`;
+
+            // Формування URL для іконки погоди
+            weatherIconEl.src = `https://openweathermap.org/img/wn/${iconCode}@2x.png`;
+            weatherIconEl.alt = description;
+
+            // Налаштування кнопки Gemini
+            recommendationBtn.onclick = () => getDailyRecommendation(data);
+            recommendationBtn.classList.remove('hidden'); // Ensure button is visible
+            toggleVisibility(geminiOutput, false); // Приховуємо попередню рекомендацію
+
+            // Відображення картки з погодою
+            toggleVisibility(weatherResult, true);
+        }
+
+        // Обробник події надсилання форми
+        cityForm.addEventListener('submit', function(event) {
+            event.preventDefault(); // Запобігаємо стандартній відправці форми
+            const city = cityInput.value.trim();
+            if (city) {
+                fetchWeather(city);
+            }
+        });
+
+        // Завантаження початкової погоди при завантаженні сторінки (наприклад, для Києва)
+        window.onload = function() {
+            // Спробуйте отримати погоду для Києва за замовчуванням
+            fetchWeather("Kyiv");
+        };
+
+    </script>
+</body>
+</html>
