@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="uk">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,23 +13,25 @@
         body {
             font-family: 'Inter', sans-serif;
             /* Гарний градієнтний фон */
-            background: linear-gradient(135deg, #6DD5FA 0%, #FF7F7F 100%); 
+            background: linear-gradient(135deg, #6DD5FA 0%, #FF7F7F 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
         }
+
         .weather-card {
             /* Ефект напівпрозорості та розмиття */
             backdrop-filter: blur(10px);
-            background-color: rgba(255, 255, 255, 0.85); 
+            background-color: rgba(255, 255, 255, 0.85);
             box-shadow: 0 20px 25px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             max-width: 420px;
             width: 100%;
             transition: all 0.3s ease;
         }
+
         /* Стиль для індикатора завантаження */
         .loader {
             border: 4px solid #f3f3f3;
@@ -39,57 +42,75 @@
             animation: spin 1s linear infinite;
             margin: 20px auto;
         }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
         }
+
         /* Стиль для жирного тексту помилки */
         #errorMessage.critical {
             font-weight: 800;
-            font-size: 1.125rem; /* text-xl */
+            font-size: 1.125rem;
+            /* text-xl */
             line-height: 1.5;
         }
-        /* Стиль для динамічних іконок */
+
+        /* Стиль для динамічних іконок - ВИПРАВЛЕНО ДЛЯ ЦЕНТРУВАННЯ */
         .weather-icon-svg {
-            width: 100px; 
+            width: 100px;
             height: 100px;
             fill: currentColor;
-            margin: 0 auto;
+            display: block;
         }
+
         .forecast-icon-svg {
-            width: 30px; 
+            width: 30px;
             height: 30px;
             fill: currentColor;
         }
     </style>
 </head>
+
 <body>
 
     <div id="app" class="weather-card rounded-xl p-6 md:p-8">
         <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Прогноз Погоди</h1>
 
-        <form id="cityForm" class="flex gap-2 mb-6">
-            <input type="text" id="cityInput" placeholder="Введіть назву міста (наприклад, Kyiv)"
-                class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                required>
-            <button type="submit" id="searchBtn"
+        <form id="cityForm" class="mb-6">
+            <div class="flex gap-2">
+                <input type="text" id="cityInput" placeholder="Введіть назву міста (наприклад, Kyiv)"
+                    class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                    required>
+                <button type="submit" id="searchBtn"
                     class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-5 rounded-lg transition duration-200 shadow-md">
-                Пошук
-            </button>
-             <button type="button" id="geoLocateBtn" title="Знайти моє місце"
-                    class="bg-gray-400 hover:bg-gray-500 text-white p-3 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.727A8 8 0 016.343 5.273L4.343 3.273a1 1 0 00-1.414 1.414L4.93 6.64a9.99 9.99 0 00-2.828 7.07c0 5.523 4.477 10 10 10s10-4.477 10-10a9.992 9.992 0 00-2.829-7.07l2.001-2.001a1 1 0 00-1.414-1.414l-2 2zM12 18a6 6 0 100-12 6 6 0 000 12z" />
+                    Пошук
+                </button>
+            </div>
+
+            <button type="button" id="geoLocateBtn" title="Знайти моє місце"
+                class="w-full mt-3 bg-gray-400 hover:bg-gray-500 text-white font-semibold p-3 rounded-lg transition duration-200 shadow-md flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M17.657 16.727A8 8 0 016.343 5.273L4.343 3.273a1 1 0 00-1.414 1.414L4.93 6.64a9.99 9.99 0 00-2.828 7.07c0 5.523 4.477 10 10 10s10-4.477 10-10a9.992 9.992 0 00-2.829-7.07l2.001-2.001a1 1 0 00-1.414-1.414l-2 2zM12 18a6 6 0 100-12 6 6 0 000 12z" />
                 </svg>
+                Знайти моє місце
             </button>
         </form>
-
         <div id="loading" class="hidden text-center">
             <div class="loader"></div>
             <p class="text-gray-600">Завантаження...</p>
         </div>
 
-        <div id="error" class="hidden bg-red-100 border-2 border-red-500 text-red-700 px-4 py-6 rounded-xl relative mb-4 text-center" role="alert">
+        <div id="error"
+            class="hidden bg-red-100 border-2 border-red-500 text-red-700 px-4 py-6 rounded-xl relative mb-4 text-center"
+            role="alert">
             <strong class="font-black text-xl text-red-800 block mb-2">ПОМИЛКА ЗАПИТУ!</strong>
             <span id="errorMessage" class="block sm:inline critical">Не вдалося отримати дані.</span>
         </div>
@@ -97,20 +118,22 @@
         <div id="weatherResult" class="hidden text-center">
             <div class="flex flex-col items-center">
                 <h2 id="cityName" class="text-4xl font-extrabold text-gray-900 mb-2">Місто</h2>
-                
-                <div id="weatherIconContainer" class="w-24 h-24 mb-2">
-                    <svg id="weatherIconSvg" class="weather-icon-svg text-yellow-500" viewBox="0 0 24 24" fill="currentColor">
-                        </svg>
+
+                <div id="weatherIconContainer" class="w-24 h-24 mb-2 mx-auto">
+                    <svg id="weatherIconSvg" class="weather-icon-svg text-yellow-500" viewBox="0 0 24 24"
+                        fill="currentColor">
+                    </svg>
                 </div>
 
                 <p id="description" class="text-xl font-medium text-gray-700 capitalize mb-4">Ясно</p>
 
                 <p id="temperature" class="text-7xl font-light text-gray-900 mb-6">--°C</p>
             </div>
-            
+
             <div class="mb-6">
                 <h3 class="text-lg font-bold text-gray-800 mb-3 text-left">Прогноз на найближчий час:</h3>
-                <div id="forecastContainer" class="flex justify-between items-center space-x-2 p-3 bg-gray-200 rounded-xl">
+                <div id="forecastContainer"
+                    class="flex justify-between items-center space-x-2 p-3 bg-gray-200 rounded-xl">
                     <div class="text-center text-sm text-gray-600 w-full">Завантаження...</div>
                 </div>
             </div>
@@ -164,17 +187,18 @@
         const windSpeedEl = document.getElementById('windSpeed');
         const pressureEl = document.getElementById('pressure');
         const forecastContainer = document.getElementById('forecastContainer');
-        
+
+        // Мапінг кодів іконок OpenWeatherMap на SVG-іконки
         // Мапінг кодів іконок OpenWeatherMap на SVG-іконки
         const iconMap = {
-            '01d': { path: '<path d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 22a9 9 0 110-18 9 9 0 010 18zM12 5a7 7 0 100 14 7 7 0 000-14zM12 7a5 5 0 110 10 5 5 0 010-10z" fill="white" /><circle cx="12" cy="12" r="5" fill="currentColor" />', color: 'text-yellow-500' }, // Clear Sky (Day)
-            '01n': { path: '<path d="M12 3a9 9 0 000 18 9 9 0 000-18zM12 4v2.5M12 17.5V20M4 12H6.5M17.5 12H20M5.5 5.5l1.768 1.768M16.732 16.732l1.768 1.768M5.5 18.5L7.268 16.732M16.732 7.268l1.768-1.768" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="currentColor" />', color: 'text-indigo-400' }, // Clear Sky (Night)
+            '01d': { path: '<circle cx="12" cy="12" r="5" fill="currentColor" class="text-yellow-500"/><path fill="currentColor" class="text-yellow-500" d="M12 2v2M12 20v2M4 12H2M20 12h2M5.6 5.6l1.4 1.4M16.9 16.9l1.4 1.4M5.6 18.4l1.4-1.4M16.9 7.1l1.4-1.4"/>', color: 'text-yellow-500' }, // Clear Sky (Day)
+            '01n': { path: '<circle cx="12" cy="12" r="5" fill="currentColor" class="text-indigo-400"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-400" d="M12 4v2.5M12 17.5V20M4 12H6.5M17.5 12H20M5.5 5.5l1.768 1.768M16.732 16.732l1.768 1.768M5.5 18.5L7.268 16.732M16.732 7.268l1.768-1.768"/>', color: 'text-indigo-400' }, // Clear Sky (Night)
             '02d': { path: '<path d="M12 5a7 7 0 00-6.9 8.5L4 14a4 4 0 000 8h16a4 4 0 000-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor" class="text-gray-400"/><circle cx="12" cy="8" r="4" fill="currentColor" class="text-yellow-500"/>', color: 'text-gray-400' }, // Few Clouds (Day)
             '02n': { path: '<path d="M12 5a7 7 0 00-6.9 8.5L4 14a4 4 0 000 8h16a4 4 0 000-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor" class="text-gray-400"/><path d="M14 4c0 3-4 6-4 6s4-3 4-6z" fill="currentColor" class="text-indigo-400"/>', color: 'text-gray-400' }, // Few Clouds (Night)
-            '03d': { path: '<path d="M12 5a7 7 0 00-6.9 8.5L4 14a4 4 0 000 8h16a4 4 0 000-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor"/>', color: 'text-gray-500' }, // Scattered Clouds
-            '03n': { path: '<path d="M12 5a7 7 0 00-6.9 8.5L4 14a4 4 0 000 8h16a4 4 0 000-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor"/>', color: 'text-gray-500' }, // Scattered Clouds
-            '04d': { path: '<path d="M10 5a6 6 0 0111 0 6 6 0 01-5 5h-1a7 7 0 00-5.9 8.5L4 19a4 4 0 010-8h16a4 4 0 010-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor"/>', color: 'text-gray-600' }, // Broken Clouds
-            '04n': { path: '<path d="M10 5a6 6 0 0111 0 6 6 0 01-5 5h-1a7 7 0 00-5.9 8.5L4 19a4 4 0 010-8h16a4 4 0 010-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor"/>', color: 'text-gray-600' }, // Broken Clouds
+            '03d': { path: '<path d="M18 10c0-3.31-2.69-6-6-6s-6 2.69-6 6c0 .88.19 1.72.54 2.5l-.01.01c-1.57.82-2.53 2.5-2.53 4.29 0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5 0-2.42-1.73-4.44-4-4.89z" fill="currentColor"/>', color: 'text-gray-500' }, // Scattered Clouds (Загальне хмарне SVG)
+            '03n': { path: '<path d="M18 10c0-3.31-2.69-6-6-6s-6 2.69-6 6c0 .88.19 1.72.54 2.5l-.01.01c-1.57.82-2.53 2.5-2.53 4.29 0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5 0-2.42-1.73-4.44-4-4.89z" fill="currentColor"/>', color: 'text-gray-500' }, // Scattered Clouds
+            '04d': { path: '<path d="M18 10c0-3.31-2.69-6-6-6s-6 2.69-6 6c0 .88.19 1.72.54 2.5l-.01.01c-1.57.82-2.53 2.5-2.53 4.29 0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5 0-2.42-1.73-4.44-4-4.89z" fill="currentColor"/>', color: 'text-gray-600' }, // Broken Clouds
+            '04n': { path: '<path d="M18 10c0-3.31-2.69-6-6-6s-6 2.69-6 6c0 .88.19 1.72.54 2.5l-.01.01c-1.57.82-2.53 2.5-2.53 4.29 0 2.76 2.24 5 5 5h10c2.76 0 5-2.24 5-5 0-2.42-1.73-4.44-4-4.89z" fill="currentColor"/>', color: 'text-gray-600' }, // Broken Clouds
             '09d': { path: '<path d="M10 5a6 6 0 0111 0 6 6 0 01-5 5h-1a7 7 0 00-5.9 8.5L4 19a4 4 0 010-8h16a4 4 0 010-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor" class="text-gray-600"/><path d="M12 16l-3-3h6l-3 3zM12 19l-3-3h6l-3 3z" fill="currentColor" class="text-blue-500"/>', color: 'text-gray-600' }, // Shower Rain
             '09n': { path: '<path d="M10 5a6 6 0 0111 0 6 6 0 01-5 5h-1a7 7 0 00-5.9 8.5L4 19a4 4 0 010-8h16a4 4 0 010-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor" class="text-gray-600"/><path d="M12 16l-3-3h6l-3 3zM12 19l-3-3h6l-3 3z" fill="currentColor" class="text-blue-500"/>', color: 'text-gray-600' }, // Shower Rain
             '10d': { path: '<path d="M12 5a7 7 0 00-6.9 8.5L4 14a4 4 0 000 8h16a4 4 0 000-8l-1.1-.5A7 7 0 0012 5z" fill="currentColor" class="text-gray-400"/><circle cx="12" cy="8" r="4" fill="currentColor" class="text-yellow-500"/><path d="M12 16l-3-3h6l-3 3zM12 19l-3-3h6l-3 3z" fill="currentColor" class="text-blue-500"/>', color: 'text-gray-400' }, // Rain (Day)
@@ -205,7 +229,7 @@
             while (attempts < maxAttempts) {
                 try {
                     const response = await fetch(url, options);
-                    
+
                     if (response.status === 401) {
                         throw new Error(`OpenWeatherMap API повертає помилку 401 (Несанкціонований доступ). Це означає, що ваш ключ API не є дійсним або ще не активований.`);
                     }
@@ -245,12 +269,12 @@
                 displayError("Будь ласка, вставте ваш API-ключ OpenWeatherMap у змінну API_KEY. Додаток не працюватиме без цього ключа.");
                 return;
             }
-            
+
             // Скидання попередніх станів
             toggleVisibility(weatherResult, false);
             toggleVisibility(errorDiv, false);
             toggleVisibility(loading, true);
-            
+
             await new Promise(resolve => setTimeout(resolve, 500));
 
             // Формування URL запиту
@@ -261,7 +285,7 @@
             } else {
                 url += `?q=${query}&appid=${API_KEY}&units=metric&lang=ua`;
             }
-            
+
             try {
                 const data = await fetchWithRetry(url);
 
@@ -279,22 +303,22 @@
 
             } catch (err) {
                 toggleVisibility(loading, false);
-                const displayMsg = err.message.includes("OpenWeatherMap API") 
-                    ? err.message 
+                const displayMsg = err.message.includes("OpenWeatherMap API")
+                    ? err.message
                     : (err.message || "Сталася помилка під час запиту до сервера.");
-                
+
                 displayError(displayMsg, false);
                 console.error("Помилка отримання погоди:", err);
             }
         }
-        
+
         /**
          * Завантажує прогноз на найближчі 3 години.
          */
         async function fetchForecast(lat, lon) {
             const url = `${FORECAST_URL}?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=ua`;
             forecastContainer.innerHTML = '<div class="text-center text-sm text-gray-600 w-full">Завантаження прогнозу...</div>';
-            
+
             try {
                 const data = await fetchWithRetry(url);
                 displayForecast(data.list.slice(0, 3)); // Беремо наступні 3 (3-годинні) інтервали
@@ -309,7 +333,7 @@
          */
         function displayForecast(forecasts) {
             forecastContainer.innerHTML = ''; // Очистка
-            
+
             forecasts.forEach(item => {
                 const time = new Date(item.dt * 1000).toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit' });
                 const temp = Math.round(item.main.temp);
@@ -330,7 +354,7 @@
                 forecastContainer.insertAdjacentHTML('beforeend', forecastItem);
             });
         }
-        
+
         /**
          * Оновлює SVG-іконку погоди.
          */
@@ -347,7 +371,7 @@
         function displayWeather(data) {
             toggleVisibility(loading, false);
             toggleVisibility(errorDiv, false);
-            
+
             // Вилучення необхідних даних
             const temp = Math.round(data.main.temp);
             const feelsLike = Math.round(data.main.feels_like);
@@ -383,7 +407,7 @@
                 toggleVisibility(loading, true);
                 toggleVisibility(errorDiv, false);
                 toggleVisibility(weatherResult, false);
-                
+
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
                         const lat = position.coords.latitude;
@@ -403,7 +427,7 @@
 
 
         // Обробник події надсилання форми
-        cityForm.addEventListener('submit', function(event) {
+        cityForm.addEventListener('submit', function (event) {
             event.preventDefault(); // Запобігаємо стандартній відправці форми
             const city = cityInput.value.trim();
             if (city) {
@@ -416,10 +440,11 @@
 
 
         // Завантаження початкової погоди при завантаженні сторінки (наприклад, для Києва)
-        window.onload = function() {
+        window.onload = function () {
             fetchWeather("Kyiv");
         };
 
     </script>
 </body>
+
 </html>
